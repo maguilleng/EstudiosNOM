@@ -18,5 +18,6 @@ namespace DTO
         public bool? GuiaIii { get; set; }
         public bool Activo { get; set; }
         public Guid? Idsync { get; set; }
+        public string TipoEstudio { get; set; }
     }
 }

@@ -51,8 +51,7 @@ namespace ESTUDIOS.Controllers
         public FileContentResult GenerarReporteNom35(int idEstudio)
         {
 
-            var datosReporteGuiaII = reporteGuiaII.GetReporteGuiaII(idEstudio);
-            
+            var datosReporteGuiaII = reporteGuiaII.GetReporteGuiaII(idEstudio);            
 
             var contentPath = hostEnvironment.ContentRootPath;
             string pathReporte = Path.Combine(contentPath, "Reportes", "Nom35GuiaII.docx");

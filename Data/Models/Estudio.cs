@@ -25,6 +25,7 @@ namespace Data.Models
         public bool? GuiaIii { get; set; }
         public bool Activo { get; set; }
         public Guid? Idsync { get; set; }
+        public string TipoEstudio { get; set; }
 
         public virtual Empresa RfcempresaEvaNavigation { get; set; }
         public virtual Empresa RfcempresaNavigation { get; set; }

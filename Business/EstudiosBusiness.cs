@@ -168,6 +168,7 @@ namespace Business
                     estudio.GuiaIi = _estudio.GuiaIi != null ? estudio.GuiaIi = _estudio.GuiaIi : estudio.GuiaIi;
                     estudio.GuiaIii = _estudio.GuiaIii != null ? estudio.GuiaIii = _estudio.GuiaIii : estudio.GuiaIii;
                     estudio.Activo = _estudio.Activo;
+                    estudio.TipoEstudio = _estudio.TipoEstudio != null ? _estudio.TipoEstudio : estudio.TipoEstudio;
                     
                     context.SaveChanges();
                     return "La actualización del estudio: " + _estudio.Titulo + " fue exítosa.";
