@@ -20,6 +20,12 @@ using WordRun = DocumentFormat.OpenXml.Wordprocessing.Run;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
 using ESTUDIOS.OpenXML;
+using System.IO.Compression;
+using QuestPDF.Fluent;
+using QuestPDF.Infrastructure;
+using Business.Pdf;
+using Microsoft.Extensions.Options;
+using DTO;
 
 namespace ESTUDIOS.Controllers
 {
@@ -32,17 +38,23 @@ namespace ESTUDIOS.Controllers
         private ITrabajadoresEvaluadosBusiness trabajadoresEvaBuss { get; set; }
         private IEstudiosBusiness estudiosBuss { get; set; }
         private IReportesBusiness reporteGuiaII { get; set; }
+        private IQuestionnairePdfExportBusiness questionnairePdfExportBuss { get; set; }
+        private PdfExportSettings pdfExportSettings { get; set; }
 
         public ReportesController(
             IWebHostEnvironment hostEnvironment,
             ITrabajadoresEvaluadosBusiness trabajadoresEvaBuss,
             IEstudiosBusiness estudiosBuss,
-            IReportesBusiness reportbuss)
+            IReportesBusiness reportbuss,
+            IQuestionnairePdfExportBusiness questionnairePdfExportBuss,
+            IOptions<PdfExportSettings> pdfExportOptions)
         {
             this.hostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
             this.trabajadoresEvaBuss = trabajadoresEvaBuss;
             this.estudiosBuss = estudiosBuss;
             this.reporteGuiaII = reportbuss;
+            this.questionnairePdfExportBuss = questionnairePdfExportBuss;
+            this.pdfExportSettings = pdfExportOptions?.Value ?? new PdfExportSettings();
         }
 
         
@@ -85,5 +97,69 @@ namespace ESTUDIOS.Controllers
 
 			return file;
 		}
+
+        [HttpGet]
+        [Route("ExportarCuestionariosPdf")]
+        public FileContentResult ExportarCuestionariosPdf(int idEstudio)
+        {
+            if (idEstudio <= 0)
+            {
+                return null;
+            }
+
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var cuestionarios = questionnairePdfExportBuss.GetQuestionnairesForStudy(idEstudio);
+            var resolvedSettings = ResolvePdfSettings();
+
+            using (var zipStream = new MemoryStream())
+            {
+                using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
+                {
+                    foreach (var cuestionario in cuestionarios)
+                    {
+                        var document = new QuestionnairePdfDocument(cuestionario, resolvedSettings);
+                        var pdfBytes = document.GeneratePdf();
+                        var fileName = SanitizeFileName($"Empleado_{cuestionario.EmployeeId}_{cuestionario.EmployeeName}.pdf");
+
+                        var entry = archive.CreateEntry(fileName);
+                        using (var entryStream = entry.Open())
+                        {
+                            entryStream.Write(pdfBytes, 0, pdfBytes.Length);
+                        }
+                    }
+                }
+
+                return File(zipStream.ToArray(), "application/zip", $"Cuestionarios_{idEstudio}.zip");
+            }
+        }
+
+        private static string SanitizeFileName(string fileName)
+        {
+            var invalidChars = Path.GetInvalidFileNameChars();
+            foreach (var invalidChar in invalidChars)
+            {
+                fileName = fileName.Replace(invalidChar, '_');
+            }
+
+            return fileName;
+        }
+
+        private PdfExportSettings ResolvePdfSettings()
+        {
+            var resolved = new PdfExportSettings
+            {
+                PageSize = pdfExportSettings.PageSize,
+                LogoPath = pdfExportSettings.LogoPath,
+                WatermarkText = pdfExportSettings.WatermarkText
+            };
+
+            if (!string.IsNullOrWhiteSpace(resolved.LogoPath) && !Path.IsPathRooted(resolved.LogoPath))
+            {
+                resolved.LogoPath = Path.Combine(hostEnvironment.ContentRootPath, resolved.LogoPath);
+            }
+
+            return resolved;
+        }
 	}
 }

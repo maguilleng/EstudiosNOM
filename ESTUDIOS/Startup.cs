@@ -20,6 +20,7 @@ using System.Reflection;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Serialization;
+using DTO;
 
 namespace ESTUDIOS
 {
@@ -46,6 +47,7 @@ namespace ESTUDIOS
             }            
             );
             services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings"));
+            services.Configure<PdfExportSettings>(Configuration.GetSection("PdfExport"));
             services.AddControllers();
             services.AddCors(options => options.AddPolicy(MyAllowSpecificOrigins, p =>
               //p.WithOrigins("http://localhost:4200", "https://pulseuitemp.azurewebsites.net")
@@ -102,6 +104,7 @@ namespace ESTUDIOS
             services.AddScoped<INotificacionesBusiness, NotificacionesBusiness>();
             services.AddScoped<IEmailService, MailService>();
             services.AddScoped<IReportesBusiness, ReportesBusiness>();
+            services.AddScoped<IQuestionnairePdfExportBusiness, Business.Pdf.QuestionnairePdfExportBusiness>();
             //services.AddTransient<IEmailService,MailService>();
 
 
