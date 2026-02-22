@@ -88,23 +88,23 @@ namespace Business.Pdf
                 table.ColumnsDefinition(columns =>
                 {
                     columns.ConstantColumn(60);
-                    columns.RelativeColumn(4);
-                    columns.RelativeColumn(3);
+                    columns.RelativeColumn(11);  // Pregunta (wider; space taken from Respuesta)
+                    columns.RelativeColumn(3);   // Respuesta (50% smaller)
                 });
 
                 table.Header(header =>
                 {
                     header.Cell().Text("Seccion").SemiBold();
-                    header.Cell().Text("Pregunta").SemiBold();
-                    header.Cell().Text("Respuesta").SemiBold();
+                    header.Cell().PaddingLeft(10).Text("Pregunta").SemiBold();
+                    header.Cell().PaddingLeft(10).Text("Respuesta").SemiBold();
                     header.Cell().ColumnSpan(3).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                 });
 
                 foreach (var item in data.Items)
                 {
-                    table.Cell().Text(item.Section ?? string.Empty);
-                    table.Cell().Text(item.Question ?? string.Empty);
-                    table.Cell().Text(item.Answer ?? string.Empty);
+                    table.Cell().PaddingBottom(10).Text(item.Section ?? string.Empty);
+                    table.Cell().PaddingLeft(10).PaddingBottom(10).Text(item.Question ?? string.Empty);
+                    table.Cell().PaddingLeft(10).PaddingBottom(10).Text(item.Answer ?? string.Empty);
                 }
             });
         }

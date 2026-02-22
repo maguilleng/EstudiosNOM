@@ -45,23 +45,69 @@ namespace Business.Pdf
                              select new DTOQuestionnairePdfItem
                              {
                                  Section = apartado.Titulo,
+                                 SectionNorma = apartado.Norma,
                                  Question = string.IsNullOrWhiteSpace(pregunta.Titulo) ? pregunta.Descripcion : pregunta.Titulo,
                                  Answer = BuildAnswer(respuesta, resultado)
                              }).ToList();
+
+                string encuestaDisplay = BuildEncuestaDisplay(items);
+                ApplyPdfFormatting(items);
 
                 result.Add(new DTOQuestionnairePdf
                 {
                     EmployeeId = trabajador.Idtrabajador,
                     Title = "Cuestionario",
-                    ClientName = clientName,
+                    ClientName = string.IsNullOrWhiteSpace(surveyName) ? clientName : $"{clientName} - {surveyName}",
                     EmployeeName = trabajador.Nombre ?? string.Empty,
-                    SurveyName = surveyName,
+                    SurveyName = encuestaDisplay,
                     CompletedAt = trabajador.FechaEvaluacion,
                     Items = items
                 });
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Build Encuesta header from NOM_APARTADOS: distinct Norma only; when the same for all, show once.
+        /// </summary>
+        private static string BuildEncuestaDisplay(IList<DTOQuestionnairePdfItem> items)
+        {
+            if (items == null || items.Count == 0) return string.Empty;
+            var distinctNormas = items
+                .Select(i => i.SectionNorma ?? string.Empty)
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Distinct()
+                .ToList();
+            return string.Join(", ", distinctNormas);
+        }
+
+        /// <summary>
+        /// Show section only on the first question of each section; prefix each question with a consecutive number per section (1, 2, 3... reset when section changes).
+        /// </summary>
+        private static void ApplyPdfFormatting(IList<DTOQuestionnairePdfItem> items)
+        {
+            if (items == null || items.Count == 0) return;
+
+            string previousSection = null;
+            int sectionQuestionIndex = 0;
+
+            foreach (var item in items)
+            {
+                bool isFirstInSection = item.Section != previousSection;
+                if (isFirstInSection)
+                {
+                    sectionQuestionIndex = 1;
+                    previousSection = item.Section;
+                }
+                else
+                {
+                    sectionQuestionIndex++;
+                }
+
+                item.Section = isFirstInSection ? (item.Section ?? string.Empty) : string.Empty;
+                item.Question = $"{sectionQuestionIndex}. {(item.Question ?? string.Empty).Trim()}";
+            }
         }
 
         private static string BuildAnswer(NomRespuesta respuesta, NomResultado resultado)
