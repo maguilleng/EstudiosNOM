@@ -103,7 +103,14 @@ namespace Business
                     trabajadores_evaluados.AreaFisica = _trabajadoresEstudio.AreaFisica != null ? _trabajadoresEstudio.AreaFisica : trabajadores_evaluados.AreaFisica;
                     trabajadores_evaluados.DescripcionPuesto = _trabajadoresEstudio.DescripcionPuesto != null ? _trabajadoresEstudio.DescripcionPuesto : trabajadores_evaluados.DescripcionPuesto;
                     trabajadores_evaluados.Activo = _trabajadoresEstudio.Activo != null ? _trabajadoresEstudio.Activo : trabajadores_evaluados.Activo;
-
+                    trabajadores_evaluados.Region = _trabajadoresEstudio.Region != null ? _trabajadoresEstudio.Region : trabajadores_evaluados.Region;
+                    trabajadores_evaluados.Ficha = _trabajadoresEstudio.Ficha != null ? _trabajadoresEstudio.Ficha : trabajadores_evaluados.Ficha;
+                    trabajadores_evaluados.NumHijos = _trabajadoresEstudio.NumHijos != null ? _trabajadoresEstudio.NumHijos : trabajadores_evaluados.NumHijos;
+                    trabajadores_evaluados.PuestosHaTenido = _trabajadoresEstudio.PuestosHaTenido != null ? _trabajadoresEstudio.PuestosHaTenido : trabajadores_evaluados.PuestosHaTenido;
+                    trabajadores_evaluados.RotacionGuardia = _trabajadoresEstudio.RotacionGuardia != null ? _trabajadoresEstudio.RotacionGuardia : trabajadores_evaluados.RotacionGuardia;
+                    trabajadores_evaluados.HorasExtraSemana = _trabajadoresEstudio.HorasExtraSemana != null ? _trabajadoresEstudio.HorasExtraSemana : trabajadores_evaluados.HorasExtraSemana;
+                    trabajadores_evaluados.TieneOtroTrabajo = _trabajadoresEstudio.TieneOtroTrabajo != null ? _trabajadoresEstudio.TieneOtroTrabajo : trabajadores_evaluados.TieneOtroTrabajo;
+                    trabajadores_evaluados.HorasExtraOtroTrabajo = _trabajadoresEstudio.HorasExtraOtroTrabajo != null ? _trabajadoresEstudio.HorasExtraOtroTrabajo : trabajadores_evaluados.HorasExtraOtroTrabajo;
 
                     context.SaveChanges();
                     return "La actualización de la evaluación al trabajador: " + trabajadores_evaluados.Nombre + " fue exítosa.";

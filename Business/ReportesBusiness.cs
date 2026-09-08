@@ -10,16 +10,39 @@ namespace Business
 {
     public class ReportesBusiness : IReportesBusiness
     {
-        DTOReporteNom35GuiaII reporteGuiaII = new DTOReporteNom35GuiaII();
-        ESTUDIOS_NOM35Context contexto = new ESTUDIOS_NOM35Context();
-        ApiResponse<DTOReporteNom35GuiaII> response = new ApiResponse<DTOReporteNom35GuiaII>();
+        private readonly ESTUDIOS_NOM35Context contexto;
+
+        public ReportesBusiness(ESTUDIOS_NOM35Context context)
+        {
+            contexto = context;
+        }
 
         public ApiResponse<DTOReporteNom35GuiaII> GetReporteGuiaII(int idEstudio)
         {
+            var reporteGuiaII = new DTOReporteNom35GuiaII();
+            var response = new ApiResponse<DTOReporteNom35GuiaII>();
+
             try
             {
-                var estudios = contexto.Estudios.Include(p => p.TrabajadoresEstudios).Include(p => p.RfcempresaEvaNavigation).Include(p => p.RfcempresaNavigation).ToList().Where(p => p.Idestudio == idEstudio);
-                var estudio = estudios.FirstOrDefault();
+                var estudio = contexto.Estudios
+                    .Include(p => p.TrabajadoresEstudios)
+                    .Include(p => p.RfcempresaEvaNavigation)
+                    .Include(p => p.RfcempresaNavigation)
+                    .FirstOrDefault(p => p.Idestudio == idEstudio);
+
+                if (estudio == null)
+                {
+                    response.IsSuccesfull = false;
+                    response.ErrorDetails = $"No se encontró el estudio con id {idEstudio}.";
+                    return response;
+                }
+
+                if (estudio.RfcempresaNavigation == null || estudio.RfcempresaEvaNavigation == null)
+                {
+                    response.IsSuccesfull = false;
+                    response.ErrorDetails = "El estudio no tiene empresa evaluada o evaluadora asociada.";
+                    return response;
+                }
 
                 DTOEstudios dtEstudios = new DTOEstudios();
                 dtEstudios.Activo = estudio.Activo;
@@ -99,242 +122,26 @@ namespace Business
                 reporteGuiaII.EmpresaEvaluadora = dtEmpresaEv;
                 reporteGuiaII.Evaluaciones = dtEvaluaciones;
 
-                /*GRAFICAS GUIA III*/
                 var rango = contexto.GrafciasGuiaII.FromSqlRaw("exec SP_GraficasGuiaII '" + idEstudio + "'").ToList();
 
-                var CargaTrabajo = rango.Find(p => p.concepto == "Carga de trabajo");
-                DTONom35CategoryDomain dtCargaTrabajo = new DTONom35CategoryDomain();
-                dtCargaTrabajo.NuloValue = CargaTrabajo.Nulo;
-                dtCargaTrabajo.NuloPorcentaje = (double)CargaTrabajo.PNulo;
-                dtCargaTrabajo.BajoValue = CargaTrabajo.Bajo;
-                dtCargaTrabajo.BajoPorcentaje = (double)CargaTrabajo.PBajo;
-                dtCargaTrabajo.MedioValue = CargaTrabajo.Medio;
-                dtCargaTrabajo.MedioPorcentaje = (double)CargaTrabajo.PMedio;
-                dtCargaTrabajo.AltoValue = CargaTrabajo.Alto;
-                dtCargaTrabajo.AltoPorcentaje = (double)CargaTrabajo.PAlto;
-                dtCargaTrabajo.MuyAltoValue = CargaTrabajo.MuyAlto;
-                dtCargaTrabajo.MuyAltoPorcentaje = (double)CargaTrabajo.PMuyAlto;
-                reporteGuiaII.DomCargaTrabajoData = dtCargaTrabajo;
-
-                var CondicionAmbientedetrabajo = rango.Find(p => p.concepto == "Condiciones en el ambiente de trabajo");
-                DTONom35CategoryDomain dtCondicionAmbientedetrabajo = new DTONom35CategoryDomain();
-                dtCondicionAmbientedetrabajo.NuloValue = CondicionAmbientedetrabajo.Nulo;
-                dtCondicionAmbientedetrabajo.NuloPorcentaje = (double)CondicionAmbientedetrabajo.PNulo;
-                dtCondicionAmbientedetrabajo.BajoValue = CondicionAmbientedetrabajo.Bajo;
-                dtCondicionAmbientedetrabajo.BajoPorcentaje = (double)CondicionAmbientedetrabajo.PBajo;
-                dtCondicionAmbientedetrabajo.MedioValue = CondicionAmbientedetrabajo.Medio;
-                dtCondicionAmbientedetrabajo.MedioPorcentaje = (double)CondicionAmbientedetrabajo.PMedio;
-                dtCondicionAmbientedetrabajo.AltoValue = CondicionAmbientedetrabajo.Alto;
-                dtCondicionAmbientedetrabajo.AltoPorcentaje = (double)CondicionAmbientedetrabajo.PAlto;
-                dtCondicionAmbientedetrabajo.MuyAltoValue = CondicionAmbientedetrabajo.MuyAlto;
-                dtCondicionAmbientedetrabajo.MuyAltoPorcentaje = (double)CondicionAmbientedetrabajo.PMuyAlto;
-                reporteGuiaII.DomCondicionesAmbTrabajoData = dtCondicionAmbientedetrabajo;
-
-                var FaltaControlSobreelTrabajo = rango.Find(p => p.concepto == "Falta de control sobre el trabajo");
-                DTONom35CategoryDomain dtFaltaControlSobreelTrabajo = new DTONom35CategoryDomain();
-                dtFaltaControlSobreelTrabajo.NuloValue = FaltaControlSobreelTrabajo.Nulo;
-                dtFaltaControlSobreelTrabajo.NuloPorcentaje = (double)FaltaControlSobreelTrabajo.PNulo;
-                dtFaltaControlSobreelTrabajo.BajoValue = FaltaControlSobreelTrabajo.Bajo;
-                dtFaltaControlSobreelTrabajo.BajoPorcentaje = (double)FaltaControlSobreelTrabajo.PBajo;
-                dtFaltaControlSobreelTrabajo.MedioValue = FaltaControlSobreelTrabajo.Medio;
-                dtFaltaControlSobreelTrabajo.MedioPorcentaje = (double)FaltaControlSobreelTrabajo.PMedio;
-                dtFaltaControlSobreelTrabajo.AltoValue = FaltaControlSobreelTrabajo.Alto;
-                dtFaltaControlSobreelTrabajo.AltoPorcentaje = (double)FaltaControlSobreelTrabajo.PAlto;
-                dtFaltaControlSobreelTrabajo.MuyAltoValue = FaltaControlSobreelTrabajo.MuyAlto;
-                dtFaltaControlSobreelTrabajo.MuyAltoPorcentaje = (double)FaltaControlSobreelTrabajo.PMuyAlto;
-                reporteGuiaII.DomFaltaControlTrabajoData = dtFaltaControlSobreelTrabajo;
-
-                var InterferecniaRelacionTabajoFamilia = rango.Find(p => p.concepto == "Interferencia en la relación trabajo-familia");
-                DTONom35CategoryDomain dtInterferecniaRelacionTabajoFamilia = new DTONom35CategoryDomain();
-                dtInterferecniaRelacionTabajoFamilia.NuloValue = InterferecniaRelacionTabajoFamilia.Nulo;
-                dtInterferecniaRelacionTabajoFamilia.NuloPorcentaje = (double)InterferecniaRelacionTabajoFamilia.PNulo;
-                dtInterferecniaRelacionTabajoFamilia.BajoValue = InterferecniaRelacionTabajoFamilia.Bajo;
-                dtInterferecniaRelacionTabajoFamilia.BajoPorcentaje = (double)InterferecniaRelacionTabajoFamilia.PBajo;
-                dtInterferecniaRelacionTabajoFamilia.MedioValue = InterferecniaRelacionTabajoFamilia.Medio;
-                dtInterferecniaRelacionTabajoFamilia.MedioPorcentaje = (double)InterferecniaRelacionTabajoFamilia.PMedio;
-                dtInterferecniaRelacionTabajoFamilia.AltoValue = InterferecniaRelacionTabajoFamilia.Alto;
-                dtInterferecniaRelacionTabajoFamilia.AltoPorcentaje = (double)InterferecniaRelacionTabajoFamilia.PAlto;
-                dtInterferecniaRelacionTabajoFamilia.MuyAltoValue = InterferecniaRelacionTabajoFamilia.MuyAlto;
-                dtInterferecniaRelacionTabajoFamilia.MuyAltoPorcentaje = (double)InterferecniaRelacionTabajoFamilia.PMuyAlto;
-                reporteGuiaII.DomInterferenciaTrabajoFamiliaData = dtInterferecniaRelacionTabajoFamilia;
-
-                var JornadaTrabajo = rango.Find(p => p.concepto == "Jornada de trabajo");
-                DTONom35CategoryDomain dtJornadaTrabajo = new DTONom35CategoryDomain();
-                dtJornadaTrabajo.NuloValue = JornadaTrabajo.Nulo;
-                dtJornadaTrabajo.NuloPorcentaje = (double)JornadaTrabajo.PNulo;
-                dtJornadaTrabajo.BajoValue = JornadaTrabajo.Bajo;
-                dtJornadaTrabajo.BajoPorcentaje = (double)JornadaTrabajo.PBajo;
-                dtJornadaTrabajo.MedioValue = JornadaTrabajo.Medio;
-                dtJornadaTrabajo.MedioPorcentaje = (double)JornadaTrabajo.PMedio;
-                dtJornadaTrabajo.AltoValue = JornadaTrabajo.Alto;
-                dtJornadaTrabajo.AltoPorcentaje = (double)JornadaTrabajo.PAlto;
-                dtJornadaTrabajo.MuyAltoValue = JornadaTrabajo.MuyAlto;
-                dtJornadaTrabajo.MuyAltoPorcentaje = (double)JornadaTrabajo.PMuyAlto;
-                reporteGuiaII.DomJornadaTrabajoData = dtJornadaTrabajo;
-
-                var Liderazgo = rango.Find(p => p.concepto == "Liderazgo");
-                DTONom35CategoryDomain dtLiderazgo = new DTONom35CategoryDomain();
-                dtLiderazgo.NuloValue = Liderazgo.Nulo;
-                dtLiderazgo.NuloPorcentaje = (double)Liderazgo.PNulo;
-                dtLiderazgo.BajoValue = Liderazgo.Bajo;
-                dtLiderazgo.BajoPorcentaje = (double)Liderazgo.PBajo;
-                dtLiderazgo.MedioValue = Liderazgo.Medio;
-                dtLiderazgo.MedioPorcentaje = (double)Liderazgo.PMedio;
-                dtLiderazgo.AltoValue = Liderazgo.Alto;
-                dtLiderazgo.AltoPorcentaje = (double)Liderazgo.PAlto;
-                dtLiderazgo.MuyAltoValue = Liderazgo.MuyAlto;
-                dtLiderazgo.MuyAltoPorcentaje = (double)Liderazgo.PMuyAlto;
-                reporteGuiaII.DomLiderazgoData = dtLiderazgo;
-
-                var RelacionesTrabajo = rango.Find(p => p.concepto == "Relaciones en el trabajo");
-                DTONom35CategoryDomain dtRelacionesTrabajo = new DTONom35CategoryDomain();
-                dtRelacionesTrabajo.NuloValue = RelacionesTrabajo.Nulo;
-                dtRelacionesTrabajo.NuloPorcentaje = (double)RelacionesTrabajo.PNulo;
-                dtRelacionesTrabajo.BajoValue = RelacionesTrabajo.Bajo;
-                dtRelacionesTrabajo.BajoPorcentaje = (double)RelacionesTrabajo.PBajo;
-                dtRelacionesTrabajo.MedioValue = RelacionesTrabajo.Medio;
-                dtRelacionesTrabajo.MedioPorcentaje = (double)RelacionesTrabajo.PMedio;
-                dtRelacionesTrabajo.AltoValue = RelacionesTrabajo.Alto;
-                dtRelacionesTrabajo.AltoPorcentaje = (double)RelacionesTrabajo.PAlto;
-                dtRelacionesTrabajo.MuyAltoValue = RelacionesTrabajo.MuyAlto;
-                dtRelacionesTrabajo.MuyAltoPorcentaje = (double)RelacionesTrabajo.PMuyAlto;
-                reporteGuiaII.DomRelacionesTrabajoData = dtRelacionesTrabajo;
-
-                var Violencia = rango.Find(p => p.concepto == "Violencia");
-                DTONom35CategoryDomain dtViolencia = new DTONom35CategoryDomain();
-                dtViolencia.NuloValue = Violencia.Nulo;
-                dtViolencia.NuloPorcentaje = (double)Violencia.PNulo;
-                dtViolencia.BajoValue = Violencia.Bajo;
-                dtViolencia.BajoPorcentaje = (double)Violencia.PBajo;
-                dtViolencia.MedioValue = Violencia.Medio;
-                dtViolencia.MedioPorcentaje = (double)Violencia.PMedio;
-                dtViolencia.AltoValue = Violencia.Alto;
-                dtViolencia.AltoPorcentaje = (double)Violencia.PAlto;
-                dtViolencia.MuyAltoValue = Violencia.MuyAlto;
-                dtViolencia.MuyAltoPorcentaje = (double)Violencia.PMuyAlto;
-                reporteGuiaII.DomViolenciaData = dtViolencia;
-
-                var infPertenenciaEInestibilidad = rango.Find(p => p.concepto == "Insuficiente sentido de pertenencia e inestabilidad");
-                if (infPertenenciaEInestibilidad != null)
-                {
-                    DTONom35CategoryDomain dtinfPertenenciaEInestibilidad = new DTONom35CategoryDomain();
-                    dtinfPertenenciaEInestibilidad.NuloValue = infPertenenciaEInestibilidad.Nulo;
-                    dtinfPertenenciaEInestibilidad.NuloPorcentaje = (double)infPertenenciaEInestibilidad.PNulo;
-                    dtinfPertenenciaEInestibilidad.BajoValue = infPertenenciaEInestibilidad.Bajo;
-                    dtinfPertenenciaEInestibilidad.BajoPorcentaje = (double)infPertenenciaEInestibilidad.PBajo;
-                    dtinfPertenenciaEInestibilidad.MedioValue = infPertenenciaEInestibilidad.Medio;
-                    dtinfPertenenciaEInestibilidad.MedioPorcentaje = (double)infPertenenciaEInestibilidad.PMedio;
-                    dtinfPertenenciaEInestibilidad.AltoValue = infPertenenciaEInestibilidad.Alto;
-                    dtinfPertenenciaEInestibilidad.AltoPorcentaje = (double)infPertenenciaEInestibilidad.PAlto;
-                    dtinfPertenenciaEInestibilidad.MuyAltoValue = infPertenenciaEInestibilidad.MuyAlto;
-                    dtinfPertenenciaEInestibilidad.MuyAltoPorcentaje = (double)infPertenenciaEInestibilidad.PMuyAlto;
-                    reporteGuiaII.DomInsuficientePerteneciaEInestabilidadData = dtinfPertenenciaEInestibilidad;
-                }
-
-                var reconocimientoDesempeño = rango.Find(p => p.concepto == "Reconocimiento del desempeño");
-                if (reconocimientoDesempeño != null)
-                {
-                    DTONom35CategoryDomain dtreconocimientoDesempeño = new DTONom35CategoryDomain();
-                    dtreconocimientoDesempeño.NuloValue = reconocimientoDesempeño.Nulo;
-                    dtreconocimientoDesempeño.NuloPorcentaje = (double)reconocimientoDesempeño.PNulo;
-                    dtreconocimientoDesempeño.BajoValue = reconocimientoDesempeño.Bajo;
-                    dtreconocimientoDesempeño.BajoPorcentaje = (double)reconocimientoDesempeño.PBajo;
-                    dtreconocimientoDesempeño.MedioValue = reconocimientoDesempeño.Medio;
-                    dtreconocimientoDesempeño.MedioPorcentaje = (double)reconocimientoDesempeño.PMedio;
-                    dtreconocimientoDesempeño.AltoValue = reconocimientoDesempeño.Alto;
-                    dtreconocimientoDesempeño.AltoPorcentaje = (double)reconocimientoDesempeño.PAlto;
-                    dtreconocimientoDesempeño.MuyAltoValue = reconocimientoDesempeño.MuyAlto;
-                    dtreconocimientoDesempeño.MuyAltoPorcentaje = (double)reconocimientoDesempeño.PMuyAlto;
-                    reporteGuiaII.DomReconocimientoDesempeñoData = dtreconocimientoDesempeño;
-                }
-
-                var AmbienteTrabajo = rango.Find(p => p.concepto == "Ambiente de trabajo");
-                DTONom35CategoryDomain dtAmbienteTrabajo = new DTONom35CategoryDomain();
-                dtAmbienteTrabajo.NuloValue = AmbienteTrabajo.Nulo;
-                dtAmbienteTrabajo.NuloPorcentaje = (double)AmbienteTrabajo.PNulo;
-                dtAmbienteTrabajo.BajoValue = AmbienteTrabajo.Bajo;
-                dtAmbienteTrabajo.BajoPorcentaje = (double)AmbienteTrabajo.PBajo;
-                dtAmbienteTrabajo.MedioValue = AmbienteTrabajo.Medio;
-                dtAmbienteTrabajo.MedioPorcentaje = (double)AmbienteTrabajo.PMedio;
-                dtAmbienteTrabajo.AltoValue = AmbienteTrabajo.Alto;
-                dtAmbienteTrabajo.AltoPorcentaje = (double)AmbienteTrabajo.PAlto;
-                dtAmbienteTrabajo.MuyAltoValue = AmbienteTrabajo.MuyAlto;
-                dtAmbienteTrabajo.MuyAltoPorcentaje = (double)AmbienteTrabajo.PMuyAlto;
-                reporteGuiaII.CatAmbienteTrabajoData = dtAmbienteTrabajo;
-
-                var FactoresPropiosActividad = rango.Find(p => p.concepto == "Factores propios de la actividad");
-                DTONom35CategoryDomain dtFactoresPropiosActividad = new DTONom35CategoryDomain();
-                dtFactoresPropiosActividad.NuloValue = FactoresPropiosActividad.Nulo;
-                dtFactoresPropiosActividad.NuloPorcentaje = (double)FactoresPropiosActividad.PNulo;
-                dtFactoresPropiosActividad.BajoValue = FactoresPropiosActividad.Bajo;
-                dtFactoresPropiosActividad.BajoPorcentaje = (double)FactoresPropiosActividad.PBajo;
-                dtFactoresPropiosActividad.MedioValue = FactoresPropiosActividad.Medio;
-                dtFactoresPropiosActividad.MedioPorcentaje = (double)FactoresPropiosActividad.PMedio;
-                dtFactoresPropiosActividad.AltoValue = FactoresPropiosActividad.Alto;
-                dtFactoresPropiosActividad.AltoPorcentaje = (double)FactoresPropiosActividad.PAlto;
-                dtFactoresPropiosActividad.MuyAltoValue = FactoresPropiosActividad.MuyAlto;
-                dtFactoresPropiosActividad.MuyAltoPorcentaje = (double)FactoresPropiosActividad.PMuyAlto;
-                reporteGuiaII.CatFactoresPropiosActividadData = dtFactoresPropiosActividad;
-
-
-                var LiderazgoRelacionesTrabajo = rango.Find(p => p.concepto == "Liderazgo y relaciones en el trabajo");
-                DTONom35CategoryDomain dtLiderazgoRelacionesTrabajo = new DTONom35CategoryDomain();
-                dtLiderazgoRelacionesTrabajo.NuloValue = LiderazgoRelacionesTrabajo.Nulo;
-                dtLiderazgoRelacionesTrabajo.NuloPorcentaje = (double)LiderazgoRelacionesTrabajo.PNulo;
-                dtLiderazgoRelacionesTrabajo.BajoValue = LiderazgoRelacionesTrabajo.Bajo;
-                dtLiderazgoRelacionesTrabajo.BajoPorcentaje = (double)LiderazgoRelacionesTrabajo.PBajo;
-                dtLiderazgoRelacionesTrabajo.MedioValue = LiderazgoRelacionesTrabajo.Medio;
-                dtLiderazgoRelacionesTrabajo.MedioPorcentaje = (double)LiderazgoRelacionesTrabajo.PMedio;
-                dtLiderazgoRelacionesTrabajo.AltoValue = LiderazgoRelacionesTrabajo.Alto;
-                dtLiderazgoRelacionesTrabajo.AltoPorcentaje = (double)LiderazgoRelacionesTrabajo.PAlto;
-                dtLiderazgoRelacionesTrabajo.MuyAltoValue = LiderazgoRelacionesTrabajo.MuyAlto;
-                dtLiderazgoRelacionesTrabajo.MuyAltoPorcentaje = (double)LiderazgoRelacionesTrabajo.PMuyAlto;
-                reporteGuiaII.CatLiderazgoRelacionesData = dtLiderazgoRelacionesTrabajo;
-
-                var OrganizacionTiempoTrabajo = rango.Find(p => p.concepto == "Organización del tiempo de trabajo");
-                DTONom35CategoryDomain dtOrganizacionTiempoTrabajo = new DTONom35CategoryDomain();
-                dtOrganizacionTiempoTrabajo.NuloValue = OrganizacionTiempoTrabajo.Nulo;
-                dtOrganizacionTiempoTrabajo.NuloPorcentaje = (double)OrganizacionTiempoTrabajo.PNulo;
-                dtOrganizacionTiempoTrabajo.BajoValue = OrganizacionTiempoTrabajo.Bajo;
-                dtOrganizacionTiempoTrabajo.BajoPorcentaje = (double)OrganizacionTiempoTrabajo.PBajo;
-                dtOrganizacionTiempoTrabajo.MedioValue = OrganizacionTiempoTrabajo.Medio;
-                dtOrganizacionTiempoTrabajo.MedioPorcentaje = (double)OrganizacionTiempoTrabajo.PMedio;
-                dtOrganizacionTiempoTrabajo.AltoValue = OrganizacionTiempoTrabajo.Alto;
-                dtOrganizacionTiempoTrabajo.AltoPorcentaje = (double)OrganizacionTiempoTrabajo.PAlto;
-                dtOrganizacionTiempoTrabajo.MuyAltoValue = OrganizacionTiempoTrabajo.MuyAlto;
-                dtOrganizacionTiempoTrabajo.MuyAltoPorcentaje = (double)OrganizacionTiempoTrabajo.PMuyAlto;
-                reporteGuiaII.CatOrgTiempoTrabajo = dtOrganizacionTiempoTrabajo;
-
-                var EntornoOrganizacional = rango.Find(p => p.concepto == "Entorno Organizacional");
-                if (EntornoOrganizacional != null)
-                {
-                    DTONom35CategoryDomain dtoEntornoOrganizacional = new DTONom35CategoryDomain();
-                    dtoEntornoOrganizacional.NuloValue = EntornoOrganizacional.Nulo;
-                    dtoEntornoOrganizacional.NuloPorcentaje = (double)EntornoOrganizacional.PNulo;
-                    dtoEntornoOrganizacional.BajoValue = EntornoOrganizacional.Bajo;
-                    dtoEntornoOrganizacional.BajoPorcentaje = (double)EntornoOrganizacional.PBajo;
-                    dtoEntornoOrganizacional.MedioValue = EntornoOrganizacional.Medio;
-                    dtoEntornoOrganizacional.MedioPorcentaje = (double)EntornoOrganizacional.PMedio;
-                    dtoEntornoOrganizacional.AltoValue = EntornoOrganizacional.Alto;
-                    dtoEntornoOrganizacional.AltoPorcentaje = (double)EntornoOrganizacional.PAlto;
-                    dtoEntornoOrganizacional.MuyAltoValue = EntornoOrganizacional.MuyAlto;
-                    dtoEntornoOrganizacional.MuyAltoPorcentaje = (double)EntornoOrganizacional.PMuyAlto;
-                    reporteGuiaII.CatEntornoOrganizacionalData = dtoEntornoOrganizacional;
-                }
-
-                var CalificacionFinal = rango.Find(p => p.concepto == "Calificación final del cuestionario\r\n");
-                DTONom35CategoryDomain dtCalificacionFinal = new DTONom35CategoryDomain();
-                dtCalificacionFinal.NuloValue = CalificacionFinal.Nulo;
-                dtCalificacionFinal.NuloPorcentaje = (double)CalificacionFinal.PNulo;
-                dtCalificacionFinal.BajoValue = CalificacionFinal.Bajo;
-                dtCalificacionFinal.BajoPorcentaje = (double)CalificacionFinal.PBajo;
-                dtCalificacionFinal.MedioValue = CalificacionFinal.Medio;
-                dtCalificacionFinal.MedioPorcentaje = (double)CalificacionFinal.PMedio;
-                dtCalificacionFinal.AltoValue = CalificacionFinal.Alto;
-                dtCalificacionFinal.AltoPorcentaje = (double)CalificacionFinal.PAlto;
-                dtCalificacionFinal.MuyAltoValue = CalificacionFinal.MuyAlto;
-                dtCalificacionFinal.MuyAltoPorcentaje = (double)CalificacionFinal.PMuyAlto;
-                reporteGuiaII.CatCalificacionFinalData = dtCalificacionFinal;
+                reporteGuiaII.DomCargaTrabajoData = MapGraficaCategoria(FindGrafica(rango, "Carga de trabajo"));
+                reporteGuiaII.DomCondicionesAmbTrabajoData = MapGraficaCategoria(FindGrafica(rango, "Condiciones en el ambiente de trabajo"));
+                reporteGuiaII.DomFaltaControlTrabajoData = MapGraficaCategoria(FindGrafica(rango, "Falta de control sobre el trabajo"));
+                reporteGuiaII.DomInterferenciaTrabajoFamiliaData = MapGraficaCategoria(FindGrafica(rango, "Interferencia en la relación trabajo-familia"));
+                reporteGuiaII.DomJornadaTrabajoData = MapGraficaCategoria(FindGrafica(rango, "Jornada de trabajo"));
+                reporteGuiaII.DomLiderazgoData = MapGraficaCategoria(FindGrafica(rango, "Liderazgo"));
+                reporteGuiaII.DomRelacionesTrabajoData = MapGraficaCategoria(FindGrafica(rango, "Relaciones en el trabajo"));
+                reporteGuiaII.DomViolenciaData = MapGraficaCategoria(FindGrafica(rango, "Violencia"));
+                reporteGuiaII.DomInsuficientePerteneciaEInestabilidadData = MapGraficaCategoria(FindGrafica(rango, "Insuficiente sentido de pertenencia e inestabilidad"));
+                reporteGuiaII.DomReconocimientoDesempeñoData = MapGraficaCategoria(FindGrafica(rango, "Reconocimiento del desempeño"));
+                reporteGuiaII.CatAmbienteTrabajoData = MapGraficaCategoria(FindGrafica(rango, "Ambiente de trabajo"));
+                reporteGuiaII.CatFactoresPropiosActividadData = MapGraficaCategoria(FindGrafica(rango, "Factores propios de la actividad"));
+                reporteGuiaII.CatLiderazgoRelacionesData = MapGraficaCategoria(FindGrafica(rango, "Liderazgo y relaciones en el trabajo"));
+                reporteGuiaII.CatOrgTiempoTrabajo = MapGraficaCategoria(FindGrafica(rango, "Organización del tiempo de trabajo"));
+                reporteGuiaII.CatEntornoOrganizacionalData = MapGraficaCategoria(FindGrafica(rango, "Entorno Organizacional"));
+                reporteGuiaII.CatCalificacionFinalData = MapGraficaCategoria(
+                    FindGrafica(rango, "Calificación final del cuestionario")
+                    ?? FindGraficaContains(rango, "Calificación final del cuestionario"));
 
                 /*TOTALES GRAFICAS*/
                 var totales = contexto.TotalesGraficas.FromSqlRaw("exec SP_TotalesGraficas '" + idEstudio + "'").ToList();
@@ -346,15 +153,11 @@ namespace Business
                 int totalfemeninos = femeninos == null ? 0 : femeninos.Valor;
                 int totalSexo = totalMasculinos + totalfemeninos;
 
-                decimal pMasculino;
                 reporteGuiaII.CantidadMasculinos = totalMasculinos;
-                pMasculino = decimal.Round((decimal)totalMasculinos / totalSexo * 100, 2);
-                reporteGuiaII.PorcentajeMasculinos = (double)pMasculino;
+                reporteGuiaII.PorcentajeMasculinos = CalcularPorcentaje(totalMasculinos, totalSexo);
 
-                decimal pFemenino;
                 reporteGuiaII.CantidadFemeninos = totalfemeninos;
-                pFemenino = decimal.Round((decimal)totalfemeninos / totalSexo * 100, 2);
-                reporteGuiaII.PorcentajeFemeninos = (double)pFemenino;
+                reporteGuiaII.PorcentajeFemeninos = CalcularPorcentaje(totalfemeninos, totalSexo);
 
                 var atencionClinicaSI = totales.Find(p => p.Concepto.Equals("REQUIERE ATENCIÓN CLINICA"));
                 var atencionClinicaNO = totales.Find(p => p.Concepto.Equals("NO REQUIERE ATENCIÓN CLINICA"));
@@ -364,15 +167,11 @@ namespace Business
                 int TotalAtencion = totalSI + totalNO;
                 DTOAcontecimientosTraumaticos dtAcontecimientosTraumaticos = new DTOAcontecimientosTraumaticos();
 
-                decimal pSI;
                 dtAcontecimientosTraumaticos.CantidadRequiereAtencionClinica = totalSI;
-                pSI = decimal.Round((decimal)totalSI / TotalAtencion * 100, 2);
-                dtAcontecimientosTraumaticos.PorcentajeRequiereAtencionClinica = (double)pSI;
+                dtAcontecimientosTraumaticos.PorcentajeRequiereAtencionClinica = CalcularPorcentaje(totalSI, TotalAtencion);
 
-                decimal pNO;
                 dtAcontecimientosTraumaticos.CantidadNoRequiereAtencionClinica = totalNO;
-                pNO = decimal.Round((decimal)totalNO / TotalAtencion * 100, 2);
-                dtAcontecimientosTraumaticos.PorcentajeNoRequiereAtencionClinica = (double)pNO;
+                dtAcontecimientosTraumaticos.PorcentajeNoRequiereAtencionClinica = CalcularPorcentaje(totalNO, TotalAtencion);
                 reporteGuiaII.CatAcontecimientosTraumaticosData = dtAcontecimientosTraumaticos;
 
                 var Edad1519 = totales.Find(p => p.Concepto.Equals("15-19"));
@@ -403,65 +202,41 @@ namespace Business
                 int totalEdades = totalEdad1519 + totalEdad2024 + totalEdad2529 + totalEdad3034 + totalEdad3539 + totalEdad4044 + totalEdad4549 + totalEdad5054 + totalEdad5559 + totalEdad6064 + totalEdad6569 + totalEdad70;
                 DTORangosEdad dtRangosEdad = new DTORangosEdad();
 
-                decimal pEdad1519;
                 dtRangosEdad.CantidadPersonas15_19 = totalEdad1519;
-                pEdad1519 = decimal.Round((decimal)totalEdad1519 / totalEdades * 100, 2);
-                dtRangosEdad.PorcentajePersonas15_19 = (double)pEdad1519;
+                dtRangosEdad.PorcentajePersonas15_19 = CalcularPorcentaje(totalEdad1519, totalEdades);
 
-                decimal pEdad2024;
                 dtRangosEdad.CantidadPersonas20_24 = totalEdad2024;
-                pEdad2024 = decimal.Round((decimal)totalEdad2024 / totalEdades * 100, 2);
-                dtRangosEdad.PorcentajePersonas20_24 = (double)pEdad2024;
+                dtRangosEdad.PorcentajePersonas20_24 = CalcularPorcentaje(totalEdad2024, totalEdades);
 
-                decimal pEdad2529;
                 dtRangosEdad.CantidadPersonas25_29 = totalEdad2529;
-                pEdad2529 = decimal.Round((decimal)totalEdad2529 / totalEdades * 100, 2);
-                dtRangosEdad.PorcentajePersonas25_29 = (double)pEdad2529;
+                dtRangosEdad.PorcentajePersonas25_29 = CalcularPorcentaje(totalEdad2529, totalEdades);
 
-                decimal pEdad3034;
                 dtRangosEdad.CantidadPersonas30_34 = totalEdad3034;
-                pEdad3034 = decimal.Round((decimal)totalEdad3034 / totalEdades * 100, 2);
-                dtRangosEdad.PorcentajePersonas30_34 = (double)pEdad3034;
+                dtRangosEdad.PorcentajePersonas30_34 = CalcularPorcentaje(totalEdad3034, totalEdades);
 
-                decimal pEdad3539;
                 dtRangosEdad.CantidadPersonas35_39 = totalEdad3539;
-                pEdad3539 = decimal.Round((decimal)totalEdad3539 / totalEdades * 100, 2);
-                dtRangosEdad.PorcentajePersonas35_39 = (double)pEdad3539;
+                dtRangosEdad.PorcentajePersonas35_39 = CalcularPorcentaje(totalEdad3539, totalEdades);
 
-                decimal pEdad4044;
                 dtRangosEdad.CantidadPersonas40_44 = totalEdad4044;
-                pEdad4044 = decimal.Round((decimal)totalEdad4044 / totalEdades * 100, 2);
-                dtRangosEdad.PorcentajePersonas40_44 = (double)pEdad4044;
+                dtRangosEdad.PorcentajePersonas40_44 = CalcularPorcentaje(totalEdad4044, totalEdades);
 
-                decimal pEdad4549;
                 dtRangosEdad.CantidadPersonas45_49 = totalEdad4549;
-                pEdad4549 = decimal.Round((decimal)totalEdad4549 / totalEdades * 100, 2);
-                dtRangosEdad.PorcentajePersonas45_49 = (double)pEdad4549;
+                dtRangosEdad.PorcentajePersonas45_49 = CalcularPorcentaje(totalEdad4549, totalEdades);
 
-                decimal pEdad5054;
                 dtRangosEdad.CantidadPersonas50_54 = totalEdad5054;
-                pEdad5054 = decimal.Round((decimal)totalEdad5054 / totalEdades * 100, 2);
-                dtRangosEdad.PorcentajePersonas50_54 = (double)pEdad5054;
+                dtRangosEdad.PorcentajePersonas50_54 = CalcularPorcentaje(totalEdad5054, totalEdades);
 
-                decimal pEdad5559;
                 dtRangosEdad.CantidadPersonas55_59 = totalEdad5559;
-                pEdad5559 = decimal.Round((decimal)totalEdad5559 / totalEdades * 100, 2);
-                dtRangosEdad.PorcentajePersonas55_59 = (double)pEdad5559;
+                dtRangosEdad.PorcentajePersonas55_59 = CalcularPorcentaje(totalEdad5559, totalEdades);
 
-                decimal pEdad6064;
                 dtRangosEdad.CantidadPersonas60_64 = totalEdad6064;
-                pEdad6064 = decimal.Round((decimal)totalEdad6064 / totalEdades * 100, 2);
-                dtRangosEdad.PorcentajePersonas60_64 = (double)pEdad6064;
+                dtRangosEdad.PorcentajePersonas60_64 = CalcularPorcentaje(totalEdad6064, totalEdades);
 
-                decimal pEdad6069;
                 dtRangosEdad.CantidadPersonas65_69 = totalEdad6569;
-                pEdad6069 = decimal.Round((decimal)totalEdad6569 / totalEdades * 100, 2);
-                dtRangosEdad.PorcentajePersonas65_69 = (double)pEdad6069;
+                dtRangosEdad.PorcentajePersonas65_69 = CalcularPorcentaje(totalEdad6569, totalEdades);
 
-                decimal pEdad70;
                 dtRangosEdad.CantidadPersonas70Mas = totalEdad70;
-                pEdad70 = decimal.Round((decimal)totalEdad70 / totalEdades * 100, 2);
-                dtRangosEdad.PorcentajePersonas70Mas = (double)pEdad70;
+                dtRangosEdad.PorcentajePersonas70Mas = CalcularPorcentaje(totalEdad70, totalEdades);
                 reporteGuiaII.RangosEdad = dtRangosEdad;
 
                 //ANTIGUEDAD DE PUESTO
@@ -486,45 +261,29 @@ namespace Business
                 int totalAntiguedadPuesto = totalap6M + totalap6M1A + totalap14A + totalap59A + totalap1014A + totalap1519A + totalap2024A + totalap25A;
                 DTOAntiguedadPuesto dtAntiguedadPuesto = new DTOAntiguedadPuesto();
 
-                decimal pap6M;
                 dtAntiguedadPuesto.Cantidad6Meses = totalap6M;
-                pap6M = decimal.Round((decimal)totalap6M / totalAntiguedadPuesto * 100, 2);
-                dtAntiguedadPuesto.Porcentaje6Meses = (double)pap6M;
+                dtAntiguedadPuesto.Porcentaje6Meses = CalcularPorcentaje(totalap6M, totalAntiguedadPuesto);
 
-                decimal pap6M1A;
                 dtAntiguedadPuesto.Cantidad_6M_1A = totalap6M1A;
-                pap6M1A = decimal.Round((decimal)totalap6M1A / totalAntiguedadPuesto * 100, 2);
-                dtAntiguedadPuesto.Porcentaje_6M_1A = (double)pap6M1A;
+                dtAntiguedadPuesto.Porcentaje_6M_1A = CalcularPorcentaje(totalap6M1A, totalAntiguedadPuesto);
 
-                decimal pap14A;
                 dtAntiguedadPuesto.Cantidad_1A_4A = totalap14A;
-                pap14A = decimal.Round((decimal)totalap14A / totalAntiguedadPuesto * 100, 2);
-                dtAntiguedadPuesto.Porcentaje_1A_4A = (double)pap14A;
+                dtAntiguedadPuesto.Porcentaje_1A_4A = CalcularPorcentaje(totalap14A, totalAntiguedadPuesto);
 
-                decimal pap59A;
                 dtAntiguedadPuesto.Cantidad_5A_9A = totalap59A;
-                pap59A = decimal.Round((decimal)totalap59A / totalAntiguedadPuesto * 100, 2);
-                dtAntiguedadPuesto.Porcentaje_5A_9A = (double)pap59A;
+                dtAntiguedadPuesto.Porcentaje_5A_9A = CalcularPorcentaje(totalap59A, totalAntiguedadPuesto);
 
-                decimal pap1014A;
                 dtAntiguedadPuesto.Cantidad_10A_14A = totalap1014A;
-                pap1014A = decimal.Round((decimal)totalap1014A / totalAntiguedadPuesto * 100, 2);
-                dtAntiguedadPuesto.Porcentaje_10A_14A = (double)pap1014A;
+                dtAntiguedadPuesto.Porcentaje_10A_14A = CalcularPorcentaje(totalap1014A, totalAntiguedadPuesto);
 
-                decimal pap1519A;
                 dtAntiguedadPuesto.Cantidad_15A_19A = totalap1519A;
-                pap1519A = decimal.Round((decimal)totalap1519A / totalAntiguedadPuesto * 100, 2);
-                dtAntiguedadPuesto.Porcentaje_15A_19A = (double)pap1519A;
+                dtAntiguedadPuesto.Porcentaje_15A_19A = CalcularPorcentaje(totalap1519A, totalAntiguedadPuesto);
 
-                decimal pap2024A;
                 dtAntiguedadPuesto.Cantidad_20A_24A = totalap2024A;
-                pap2024A = decimal.Round((decimal)totalap2024A / totalAntiguedadPuesto * 100, 2);
-                dtAntiguedadPuesto.Porcentaje_20A_24A = (double)pap2024A;
+                dtAntiguedadPuesto.Porcentaje_20A_24A = CalcularPorcentaje(totalap2024A, totalAntiguedadPuesto);
 
-                decimal pap25A;
                 dtAntiguedadPuesto.Cantidad_Mas25A = totalap25A;
-                pap25A = decimal.Round((decimal)totalap25A / totalAntiguedadPuesto * 100, 2);
-                dtAntiguedadPuesto.Porcentaje_Mas25A = (double)pap25A;
+                dtAntiguedadPuesto.Porcentaje_Mas25A = CalcularPorcentaje(totalap25A, totalAntiguedadPuesto);
                 reporteGuiaII.AntiguedadPuesto = dtAntiguedadPuesto;
 
                 var Nocturno = totales.Find(p => p.Concepto.Equals("Nocturno"));
@@ -537,20 +296,14 @@ namespace Business
                 int totalJornada = totalNocturno + totalDiurno + totalMixto;
                 DTOResumenJornadaLaboral dtJornadaLaboral = new DTOResumenJornadaLaboral();
 
-                decimal pNocturno;
                 dtJornadaLaboral.CantidadNocturno = totalNocturno;
-                pNocturno = decimal.Round((decimal)totalNocturno / totalJornada * 100, 2);
-                dtJornadaLaboral.PorcentajeNocturno = (double)pNocturno;
+                dtJornadaLaboral.PorcentajeNocturno = CalcularPorcentaje(totalNocturno, totalJornada);
 
-                decimal pDiurno;
                 dtJornadaLaboral.CantidadDiurno = totalDiurno;
-                pDiurno = decimal.Round((decimal)totalDiurno / totalJornada * 100, 2);
-                dtJornadaLaboral.PorcentajeDiurno = (double)pDiurno;
+                dtJornadaLaboral.PorcentajeDiurno = CalcularPorcentaje(totalDiurno, totalJornada);
 
-                decimal pMixtoA;
                 dtJornadaLaboral.CantidadMixto = totalMixto;
-                pMixtoA = decimal.Round((decimal)totalMixto / totalJornada * 100, 2);
-                dtJornadaLaboral.PorcentajeMixto = (double)pMixtoA;
+                dtJornadaLaboral.PorcentajeMixto = CalcularPorcentaje(totalMixto, totalJornada);
                 reporteGuiaII.ResumenJornadaLaboral = dtJornadaLaboral;
 
                 //Nivel Educativo
@@ -575,45 +328,29 @@ namespace Business
                 int totalNivelesEstudios = totalsinFormacion + totalprimaria + totalsecundaria + totalpreparatoriaBachillerato + totaltecnicoSuperior + totallicenciatura + totalmaestria + totaldoctorado;
                 DTOResumenEscolaridad dtResumenEscolaridad = new DTOResumenEscolaridad();
 
-                decimal psinFormacion;
                 dtResumenEscolaridad.CantidadSinFormacion = totalsinFormacion;
-                psinFormacion = decimal.Round((decimal)totalsinFormacion / totalNivelesEstudios * 100, 2);
-                dtResumenEscolaridad.PorcentajeSinFormacion = (double)psinFormacion;
+                dtResumenEscolaridad.PorcentajeSinFormacion = CalcularPorcentaje(totalsinFormacion, totalNivelesEstudios);
 
-                decimal pprimaria;
                 dtResumenEscolaridad.CantidadPrimaria = totalprimaria;
-                pprimaria = decimal.Round((decimal)totalprimaria / totalNivelesEstudios * 100, 2);
-                dtResumenEscolaridad.PorcentajePrimaria = (double)pprimaria;
+                dtResumenEscolaridad.PorcentajePrimaria = CalcularPorcentaje(totalprimaria, totalNivelesEstudios);
 
-                decimal psecundaria;
                 dtResumenEscolaridad.CantidadSecundaria = totalsecundaria;
-                psecundaria = decimal.Round((decimal)totalsecundaria / totalNivelesEstudios * 100, 2);
-                dtResumenEscolaridad.PorcentajeSecundaria = (double)psecundaria;
+                dtResumenEscolaridad.PorcentajeSecundaria = CalcularPorcentaje(totalsecundaria, totalNivelesEstudios);
 
-                decimal ppreparatoriaBachillerato;
                 dtResumenEscolaridad.CantidadPreparatoria = totalpreparatoriaBachillerato;
-                ppreparatoriaBachillerato = decimal.Round((decimal)totalpreparatoriaBachillerato / totalNivelesEstudios * 100, 2);
-                dtResumenEscolaridad.PorcentajePreparatoria = (double)ppreparatoriaBachillerato;
+                dtResumenEscolaridad.PorcentajePreparatoria = CalcularPorcentaje(totalpreparatoriaBachillerato, totalNivelesEstudios);
 
-                decimal ptecnicoSuperior;
                 dtResumenEscolaridad.CantidadTecnicoSuperior = totaltecnicoSuperior;
-                ptecnicoSuperior = decimal.Round((decimal)totaltecnicoSuperior / totalNivelesEstudios * 100, 2);
-                dtResumenEscolaridad.PorcentajeTecnicoSuperior = (double)ptecnicoSuperior;
+                dtResumenEscolaridad.PorcentajeTecnicoSuperior = CalcularPorcentaje(totaltecnicoSuperior, totalNivelesEstudios);
 
-                decimal plicenciatura;
                 dtResumenEscolaridad.CantidadLicenciatura = totallicenciatura;
-                plicenciatura = decimal.Round((decimal)totallicenciatura / totalNivelesEstudios * 100, 2);
-                dtResumenEscolaridad.PorcentajeLicenciatura = (double)plicenciatura;
+                dtResumenEscolaridad.PorcentajeLicenciatura = CalcularPorcentaje(totallicenciatura, totalNivelesEstudios);
 
-                decimal pmaestria;
                 dtResumenEscolaridad.CantidadMaestria = totalmaestria;
-                pmaestria = decimal.Round((decimal)totalmaestria / totalNivelesEstudios * 100, 2);
-                dtResumenEscolaridad.PorcentajeMaestria = (double)pmaestria;
+                dtResumenEscolaridad.PorcentajeMaestria = CalcularPorcentaje(totalmaestria, totalNivelesEstudios);
 
-                decimal pdoctorado;
                 dtResumenEscolaridad.CantidadDoctorado = totaldoctorado;
-                pdoctorado = decimal.Round((decimal)totaldoctorado / totalNivelesEstudios * 100, 2);
-                dtResumenEscolaridad.PorcentajeDoctorado = (double)pdoctorado;
+                dtResumenEscolaridad.PorcentajeDoctorado = CalcularPorcentaje(totaldoctorado, totalNivelesEstudios);
                 reporteGuiaII.ResumenEscolaridad = dtResumenEscolaridad;
 
                 response.ResponseData = reporteGuiaII;
@@ -628,6 +365,48 @@ namespace Business
             }
 
             return response;
+        }
+
+        private static Graficas_GUIAII FindGrafica(List<Graficas_GUIAII> rango, string concepto)
+        {
+            return rango.Find(p => string.Equals(p.concepto?.Trim(), concepto, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static Graficas_GUIAII FindGraficaContains(List<Graficas_GUIAII> rango, string conceptoParcial)
+        {
+            return rango.Find(p => p.concepto != null && p.concepto.Trim().Contains(conceptoParcial, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static DTONom35CategoryDomain MapGraficaCategoria(Graficas_GUIAII grafica)
+        {
+            if (grafica == null)
+            {
+                return new DTONom35CategoryDomain();
+            }
+
+            return new DTONom35CategoryDomain
+            {
+                NuloValue = grafica.Nulo,
+                NuloPorcentaje = (double)grafica.PNulo,
+                BajoValue = grafica.Bajo,
+                BajoPorcentaje = (double)grafica.PBajo,
+                MedioValue = grafica.Medio,
+                MedioPorcentaje = (double)grafica.PMedio,
+                AltoValue = grafica.Alto,
+                AltoPorcentaje = (double)grafica.PAlto,
+                MuyAltoValue = grafica.MuyAlto,
+                MuyAltoPorcentaje = (double)grafica.PMuyAlto
+            };
+        }
+
+        private static double CalcularPorcentaje(int valor, int total)
+        {
+            if (total <= 0)
+            {
+                return 0;
+            }
+
+            return (double)decimal.Round((decimal)valor / total * 100, 2);
         }
     }
 }

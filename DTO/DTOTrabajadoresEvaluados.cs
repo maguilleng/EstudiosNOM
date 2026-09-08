@@ -34,5 +34,13 @@ namespace DTO
         public string DescripcionPuesto { get; set; }
         public bool? Activo { get; set; }
         public Guid? Idsync { get; set; }
+        public string Region { get; set; }
+        public string Ficha { get; set; }
+        public int? NumHijos { get; set; }
+        public string PuestosHaTenido { get; set; }
+        public string RotacionGuardia { get; set; }
+        public int? HorasExtraSemana { get; set; }
+        public bool? TieneOtroTrabajo { get; set; }
+        public int HorasExtraOtroTrabajo { get; set; }
     }
 }
