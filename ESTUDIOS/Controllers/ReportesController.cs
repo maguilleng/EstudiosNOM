@@ -60,28 +60,33 @@ namespace ESTUDIOS.Controllers
         
         [HttpGet]
         [Route("GenerarReporteNom35")]
-        public FileContentResult GenerarReporteNom35(int idEstudio)
+        public ActionResult GenerarReporteNom35(int idEstudio)
         {
+            if (idEstudio <= 0)
+            {
+                return BadRequest("El id del estudio es inválido.");
+            }
 
-            var datosReporteGuiaII = reporteGuiaII.GetReporteGuiaII(idEstudio);            
+            var datosReporteGuiaII = reporteGuiaII.GetReporteGuiaII(idEstudio);
+
+            if (!datosReporteGuiaII.IsSuccesfull || datosReporteGuiaII.ResponseData == null)
+            {
+                return BadRequest(datosReporteGuiaII.ErrorDetails ?? "No fue posible generar los datos del reporte NOM35.");
+            }
 
             var contentPath = hostEnvironment.ContentRootPath;
             string pathReporte = Path.Combine(contentPath, "Reportes", "Nom35GuiaII.docx");
 
-            if (idEstudio == 0)
+            if (!System.IO.File.Exists(pathReporte))
             {
-                return null;
+                return BadRequest($"No se encontró la plantilla del reporte en: {pathReporte}");
             }
 
-            DTOReporteNom35GuiaII DtoReporteNom35GuiaII = datosReporteGuiaII.ResponseData;
+            byte[] reporteByteArray = ReportesWord.GenerarReporteNom35(datosReporteGuiaII.ResponseData, pathReporte);
 
-            byte[] reporteByteArray = ReportesWord.GenerarReporteNom35(DtoReporteNom35GuiaII, pathReporte);
-
-            FileContentResult file = File(reporteByteArray,
+            return File(reporteByteArray,
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 $"Reporte NOM35.docx");
-
-            return file;
         }
 
 		[HttpGet]
